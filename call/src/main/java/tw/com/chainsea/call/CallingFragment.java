@@ -1,8 +1,6 @@
 package tw.com.chainsea.call;
 
-import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
@@ -16,48 +14,54 @@ import org.linphone.core.LinphoneAddress;
 import org.linphone.core.LinphoneAuthInfo;
 import org.linphone.core.LinphoneCall;
 import org.linphone.core.LinphoneCallParams;
-import org.linphone.core.LinphoneCallStats;
-import org.linphone.core.LinphoneChatMessage;
-import org.linphone.core.LinphoneChatRoom;
-import org.linphone.core.LinphoneContent;
 import org.linphone.core.LinphoneCore;
 import org.linphone.core.LinphoneCoreException;
 import org.linphone.core.LinphoneCoreFactory;
-import org.linphone.core.LinphoneCoreListener;
-import org.linphone.core.LinphoneEvent;
-import org.linphone.core.LinphoneFriend;
-import org.linphone.core.LinphoneInfoMessage;
 import org.linphone.core.LinphoneProxyConfig;
-import org.linphone.core.PublishState;
 import org.linphone.core.Reason;
-import org.linphone.core.SubscriptionState;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
-import tw.com.chainsea.call.base.CallLog;
+import me.pengtao.ptlog.PtLog;
+import tw.com.chainsea.call.base.LinphoneManager;
+import tw.com.chainsea.call.base.OnLinphoneListener;
 import tw.com.chainsea.call.base.UIThreadDispatcher;
-import tw.com.chainsea.call.base.Utility;
 import tw.com.chainsea.call.entity.DigitModel;
 import tw.com.chainsea.call.ui.DialerGridAdapter;
 import tw.com.chainsea.call.widget.SquareImage;
 
-import static android.content.Intent.ACTION_MAIN;
-
 /**
  * A placeholder fragment containing a simple view.
  */
-public class CallingFragment extends Fragment implements LinphoneCoreListener.LinphoneListener, View.OnClickListener {
+public class CallingFragment extends Fragment implements OnLinphoneListener, View.OnClickListener {
     View mView = null;
 
     LinphoneCore mLc = null;
     SquareImage muteImage = null;
     SquareImage speakerImage = null;
     OnCallingListener mListener = null;
+    TextView tvTimer = null;
+    TextView tvTitle = null;
 
-    public static CallingFragment newInstance() {
+    private final static String USER_ID = "user_id";
+    private final static String PWD = "pwd";
+    private final static String AGENT_ID = "agent_id";
+    private final static String HOST = "host";
+    private final static String AGENT_NAME = "agent_name";
+
+    public static CallingFragment newInstance(String userId, String pwd, String agentId, String host, String agentName) {
         CallingFragment fragment = new CallingFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString(USER_ID, userId);
+        bundle.putString(PWD, pwd);
+        bundle.putString(AGENT_ID, agentId);
+        bundle.putString(HOST, host);
+        bundle.putString(AGENT_NAME, agentName);
+        fragment.setArguments(bundle);
+
         return fragment;
     }
 
@@ -70,10 +74,14 @@ public class CallingFragment extends Fragment implements LinphoneCoreListener.Li
                              Bundle savedInstanceState) {
         mView = inflater.inflate(R.layout.fragment_calling_two, container, false);
         mView.findViewById(R.id.calling_hang_up).setOnClickListener(this);
+
+        tvTitle = (TextView)mView.findViewById(R.id.calling_title);
+        tvTitle.setText(getArguments().getString(AGENT_NAME));
         speakerImage = (SquareImage)mView.findViewById(R.id.calling_speaker);
         speakerImage.setOnClickListener(this);
         muteImage = (SquareImage)mView.findViewById(R.id.calling_mute);
         muteImage.setOnClickListener(this);
+        tvTimer = (TextView) mView.findViewById(R.id.calling_time);
         displayDialer();
         return mView;
     }
@@ -97,64 +105,37 @@ public class CallingFragment extends Fragment implements LinphoneCoreListener.Li
         });
     }
 
-    Handler mHandler = new Handler();
-    private ServiceWaitThread mThread;
-
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        if (LinphoneService.isReady()) {
-            onServiceReady();
-        } else {
-            // start linphone as background
-            getActivity().startService(new Intent(ACTION_MAIN).setClass(getActivity(), LinphoneService.class));
-            mThread = new ServiceWaitThread();
-            mThread.start();
-        }
+        initLinphone();
     }
 
     private void initLinphone() {
+        LinphoneManager.createAndStart(getActivity(), this);
         mLc = LinphoneManager.getLc();
-        mLc.addListener(this);
+        Bundle bundle = getArguments();
         try {
-            registerUserAuth(Utility.getUsername(getActivity()), Utility.getPassword(getActivity()), Utility.getHost(getActivity()));
+            registerUserAuth(bundle.getString(USER_ID), bundle.getString(PWD), bundle.getString(HOST));
         } catch (LinphoneCoreException e) {
             e.printStackTrace();
         }
     }
 
-    protected void onServiceReady() {
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                initLinphone();
-            }
-        }, 1000);
-    }
-
-    private class ServiceWaitThread extends Thread {
-        public void run() {
-            while (!LinphoneService.isReady()) {
-                try {
-                    sleep(30);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("waiting thread sleep() has been interrupted");
-                }
-            }
-
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    onServiceReady();
-                }
-            });
-            mThread = null;
+    @Override
+    public void onRegState(LinphoneCore.RegistrationState registrationState, String reason) {
+        PtLog.d("registrationState = " + registrationState.toString() + ", reason = " + reason);
+        if ( registrationState == LinphoneCore.RegistrationState.RegistrationOk ) {
+            setCallingTo(getArguments().getString(AGENT_ID),  getArguments().getString(HOST));
+        } else if ( registrationState == LinphoneCore.RegistrationState.RegistrationFailed ) {
+            PtLog.e("register failed");
+            if ( mListener != null ) mListener.onRegistrationFailed();
         }
     }
 
     @Override
-    public void callState(LinphoneCore linphoneCore, final LinphoneCall linphoneCall, LinphoneCall.State state, String s) {
-        CallLog.e( "callState = " + state.toString() );
+    public void onCallState(final LinphoneCall linphoneCall, LinphoneCall.State state, String reason) {
+        PtLog.d("callState = " + state.toString());
 
         if ( state == LinphoneCall.State.IncomingReceived ) {
             mView.findViewById(R.id.receive_call).setVisibility(View.VISIBLE);
@@ -177,16 +158,19 @@ public class CallingFragment extends Fragment implements LinphoneCoreListener.Li
                 }
             });
         }
-        if ( state == LinphoneCall.State.Connected ) {
-            startTimeCount();
-        }
         if ( state == LinphoneCall.State.CallEnd ) {
+            stopCallingTimer();
             if ( mListener != null ) mListener.onCallEnd();
         }
+
+        if ( state == LinphoneCall.State.Connected ) {
+            startCallingTimer();
+        }
+
     }
 
     public void registerUserAuth(String name, String password, String host) throws LinphoneCoreException {
-        CallLog.e("registerUserAuth name = " + name + ", registerUserAuth pw = " + password + ", registerUserAuth host = " + host);
+        PtLog.d("name = " + name + ", pw = " + password + ", host = " + host);
 
         String identity = "sip:" + name + "@" + host;
         String proxy = "sip:" + host;
@@ -206,8 +190,12 @@ public class CallingFragment extends Fragment implements LinphoneCoreListener.Li
 
         prxCfg.enableRegister(true);
 
+        mLc.clearAuthInfos();
+        mLc.clearProxyConfigs();
+
         mLc.addProxyConfig(prxCfg);
         mLc.addAuthInfo(authInfo);
+
 
         mLc.setDefaultProxyConfig(prxCfg);
     }
@@ -279,192 +267,42 @@ public class CallingFragment extends Fragment implements LinphoneCoreListener.Li
 
     @Override
     public void onDestroy() {
+        super.onDestroy();
+        PtLog.e(" CallingFragment Destroyed ");
         LinphoneManager.destroy();
     }
 
+    class CallingTimer extends TimerTask {
 
-    @Override
-    public void registrationState(LinphoneCore linphoneCore, LinphoneProxyConfig linphoneProxyConfig, LinphoneCore.RegistrationState registrationState, String s) {
-        CallLog.d("registrationState = " + registrationState.toString() + ", s = " + s);
-        if ( registrationState == LinphoneCore.RegistrationState.RegistrationOk ) {
-            setCallingTo(Utility.getAgent(getActivity()),  Utility.getHost(getActivity()));
-        } else if ( registrationState == LinphoneCore.RegistrationState.RegistrationFailed ) {
-            CallLog.e("register failed close the window");
-            if ( mListener != null ) mListener.onRegistrationFailed();
+        @Override
+        public void run() {
+            ++seconds;
+            if (seconds > 60) {
+                ++minutes;
+                seconds = 0;
+                if (minutes > 60) {
+                    minutes = 0;
+                }
+            }
+            UIThreadDispatcher.dispatch(new Runnable() {
+                @Override
+                public void run() {
+                    tvTimer.setText(getString(R.string.timer, minutes, seconds));
+                }
+            });
         }
     }
 
+    Timer callingTimer;
     int minutes = 0;
     int seconds = 0;
-    boolean continueTimeCount = true;
-    public void startTimeCount() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    ++seconds;
-                    if (seconds > 60) {
-                        ++minutes;
-                        seconds = 0;
-                        if (minutes > 60) {
-                            minutes = 0;
-                        }
-                    }
-                    UIThreadDispatcher.dispatch(new Runnable() {
-                        @Override
-                        public void run() {
-                            TextView timeText = (TextView) mView.findViewById(R.id.calling_time);
-                            String minDis = "" + minutes;
-                            if (minutes < 10) {
-                                minDis = "0" + minDis;
-                            }
-                            String secDis = "" + seconds;
-                            if (seconds < 10) {
-                                secDis = "0" + secDis;
-                            }
-                            timeText.setText(minDis + ":" + secDis);
-                        }
-                    });
-                    if (!continueTimeCount) {
-                        break;
-                    }
-                }
-            }
-        }).start();
+    public void startCallingTimer() {
+        callingTimer = new Timer();
+        callingTimer.scheduleAtFixedRate(new CallingTimer(), 1000, 1000);
     }
 
-    @Override
-    public void globalState(LinphoneCore linphoneCore, LinphoneCore.GlobalState globalState, String s) {
-        CallLog.e( "globalState = " + globalState.toString() );
-    }
-
-    @Override
-    public void authInfoRequested(LinphoneCore linphoneCore, String s, String s1, String s2) {
-
-    }
-
-    @Override
-    public void callStatsUpdated(LinphoneCore linphoneCore, LinphoneCall linphoneCall, LinphoneCallStats linphoneCallStats) {
-
-    }
-
-    @Override
-    public void newSubscriptionRequest(LinphoneCore linphoneCore, LinphoneFriend linphoneFriend, String s) {
-
-    }
-
-    @Override
-    public void notifyPresenceReceived(LinphoneCore linphoneCore, LinphoneFriend linphoneFriend) {
-
-    }
-
-    @Override
-    public void textReceived(LinphoneCore linphoneCore, LinphoneChatRoom linphoneChatRoom, LinphoneAddress linphoneAddress, String s) {
-
-    }
-
-    @Override
-    public void dtmfReceived(LinphoneCore linphoneCore, LinphoneCall linphoneCall, int i) {
-
-    }
-
-    @Override
-    public void notifyReceived(LinphoneCore linphoneCore, LinphoneCall linphoneCall, LinphoneAddress linphoneAddress, byte[] bytes) {
-
-    }
-
-    @Override
-    public void transferState(LinphoneCore linphoneCore, LinphoneCall linphoneCall, LinphoneCall.State state) {
-
-    }
-
-    @Override
-    public void infoReceived(LinphoneCore linphoneCore, LinphoneCall linphoneCall, LinphoneInfoMessage linphoneInfoMessage) {
-
-    }
-
-    @Override
-    public void subscriptionStateChanged(LinphoneCore linphoneCore, LinphoneEvent linphoneEvent, SubscriptionState subscriptionState) {
-
-    }
-
-    @Override
-    public void publishStateChanged(LinphoneCore linphoneCore, LinphoneEvent linphoneEvent, PublishState publishState) {
-
-    }
-
-    @Override
-    public void show(LinphoneCore linphoneCore) {
-
-    }
-
-    @Override
-    public void displayStatus(LinphoneCore linphoneCore, String s) {
-
-    }
-
-    @Override
-    public void displayMessage(LinphoneCore linphoneCore, String s) {
-
-    }
-
-    @Override
-    public void displayWarning(LinphoneCore linphoneCore, String s) {
-
-    }
-
-    @Override
-    public void fileTransferProgressIndication(LinphoneCore linphoneCore, LinphoneChatMessage linphoneChatMessage, LinphoneContent linphoneContent, int i) {
-
-    }
-
-    @Override
-    public void fileTransferRecv(LinphoneCore linphoneCore, LinphoneChatMessage linphoneChatMessage, LinphoneContent linphoneContent, byte[] bytes, int i) {
-
-    }
-
-    @Override
-    public int fileTransferSend(LinphoneCore linphoneCore, LinphoneChatMessage linphoneChatMessage, LinphoneContent linphoneContent, ByteBuffer byteBuffer, int i) {
-        return 0;
-    }
-
-    @Override
-    public void callEncryptionChanged(LinphoneCore linphoneCore, LinphoneCall linphoneCall, boolean b, String s) {
-
-    }
-
-    @Override
-    public void isComposingReceived(LinphoneCore linphoneCore, LinphoneChatRoom linphoneChatRoom) {
-
-    }
-
-    @Override
-    public void uploadProgressIndication(LinphoneCore linphoneCore, int i, int i1) {
-
-    }
-
-    @Override
-    public void uploadStateChanged(LinphoneCore linphoneCore, LinphoneCore.LogCollectionUploadState logCollectionUploadState, String s) {
-
-    }
-
-    @Override
-    public void messageReceived(LinphoneCore linphoneCore, LinphoneChatRoom linphoneChatRoom, LinphoneChatMessage linphoneChatMessage) {
-
-    }
-
-    @Override
-    public void notifyReceived(LinphoneCore linphoneCore, LinphoneEvent linphoneEvent, String s, LinphoneContent linphoneContent) {
-
-    }
-
-    @Override
-    public void configuringStatus(LinphoneCore linphoneCore, LinphoneCore.RemoteProvisioningState remoteProvisioningState, String s) {
-
+    private void stopCallingTimer() {
+        callingTimer.cancel();
+        callingTimer.purge();
     }
 }

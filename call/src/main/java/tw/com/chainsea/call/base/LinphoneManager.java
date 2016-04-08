@@ -1,10 +1,7 @@
-package tw.com.chainsea.call;
+package tw.com.chainsea.call.base;
 
 import android.annotation.TargetApi;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Build;
@@ -35,14 +32,14 @@ import java.nio.ByteBuffer;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import tw.com.chainsea.call.base.UIThreadDispatcher;
+import me.pengtao.ptlog.PtLog;
+import tw.com.chainsea.call.R;
 
 /**
  * LinphoneManager
  * Created by 90Chris on 2015/7/1.
  */
 public class LinphoneManager implements LinphoneCoreListener.LinphoneListener {
-    final String TAG = "pengtao" + getClass().getSimpleName();
 
     private static LinphoneManager instance;
     private LinphoneCore mLc;
@@ -61,10 +58,11 @@ public class LinphoneManager implements LinphoneCoreListener.LinphoneListener {
     private Context mServiceContext;
     private Resources mR;
     private Timer mTimer;
-    private BroadcastReceiver mKeepAliveReceiver = new KeepAliveReceiver();
 
-    protected LinphoneManager(final Context c) {
-        LinphoneCoreFactory.instance().setDebugMode(true, "MyCall");
+    private OnLinphoneListener mLinphoneListener = null;
+
+    protected LinphoneManager(final Context c, OnLinphoneListener listener) {
+        LinphoneCoreFactory.instance().setDebugMode(true, "LinphoneCall");
         sExited = false;
         mServiceContext = c;
 
@@ -80,14 +78,17 @@ public class LinphoneManager implements LinphoneCoreListener.LinphoneListener {
         mErrorToneFile = basePath + "/error.wav";
 
         mR = c.getResources();
+
+        mLinphoneListener = listener;
     }
 
-    public synchronized static final LinphoneManager createAndStart(Context c) {
+    public synchronized static LinphoneManager createAndStart(Context c, OnLinphoneListener listener) {
         if (instance != null)
             throw new RuntimeException("Linphone Manager is already initialized");
 
-        instance = new LinphoneManager(c);
+        instance = new LinphoneManager(c, listener);
         instance.startLibLinphone(c);
+
         /*TelephonyManager tm = (TelephonyManager) c.getSystemService(Context.TELEPHONY_SERVICE);
         boolean gsmIdle = tm.getCallState() == TelephonyManager.CALL_STATE_IDLE;
         setGsmIdle(gsmIdle);*/
@@ -105,15 +106,15 @@ public class LinphoneManager implements LinphoneCoreListener.LinphoneListener {
         return getLc();
     }
 
-    public static final boolean isInstanciated() {
+    public static boolean isInitialized() {
         return instance != null;
     }
 
-    public static synchronized final LinphoneCore getLc() {
+    public static synchronized LinphoneCore getLc() {
         return getInstance().mLc;
     }
 
-    public static synchronized final LinphoneManager getInstance() {
+    public static synchronized LinphoneManager getInstance() {
         if (instance != null) return instance;
 
         if (sExited) {
@@ -129,7 +130,7 @@ public class LinphoneManager implements LinphoneCoreListener.LinphoneListener {
             copyAssetsFromPackage();
 
             mLc = LinphoneCoreFactory.instance().createLinphoneCore(this, mLinphoneConfigFile, mLinphoneFactoryConfigFile, null, c);
-            mLc.addListener((LinphoneCoreListener) c);
+            //mLc.addListener((LinphoneCoreListener) c);
 
             try {
                 initLiblinphone();
@@ -156,7 +157,7 @@ public class LinphoneManager implements LinphoneCoreListener.LinphoneListener {
         }
         catch (Exception e) {
             e.printStackTrace();
-            Log.e(TAG, "Cannot start linphone");
+            PtLog.e("Cannot start linphone");
         }
     }
 
@@ -179,17 +180,17 @@ public class LinphoneManager implements LinphoneCoreListener.LinphoneListener {
         //mLc.setCallErrorTone(Reason.NotFound, mErrorToneFile);
 
         int availableCores = Runtime.getRuntime().availableProcessors();
-        Log.w(TAG, "MediaStreamer : " + availableCores + " cores detected and configured");
+        PtLog.w("MediaStreamer : " + availableCores + " cores detected and configured");
         mLc.setCpuCount(availableCores);
 
         int migrationResult = getLc().migrateToMultiTransport();
-        Log.d(TAG, "Migration to multi transport result = " + migrationResult);
+        PtLog.d("Migration to multi transport result = " + migrationResult);
 
         mLc.setNetworkReachable(true);
 
-        IntentFilter lFilter = new IntentFilter(Intent.ACTION_SCREEN_ON);
+        /*IntentFilter lFilter = new IntentFilter(Intent.ACTION_SCREEN_ON);
         lFilter.addAction(Intent.ACTION_SCREEN_OFF);
-        mServiceContext.registerReceiver(mKeepAliveReceiver, lFilter);
+        mServiceContext.registerReceiver(mKeepAliveReceiver, lFilter);*/
     }
 
     private void copyAssetsFromPackage() throws IOException {
@@ -247,142 +248,144 @@ public class LinphoneManager implements LinphoneCoreListener.LinphoneListener {
 
     @Override
     public void authInfoRequested(LinphoneCore linphoneCore, String s, String s1, String s2) {
-        Log.e(TAG, "authInfoRequested");
+        PtLog.e("authInfoRequested" + ", " + s + ", " + s1 + ", " + s2 );
     }
 
     @Override
     public void callStatsUpdated(LinphoneCore linphoneCore, LinphoneCall linphoneCall, LinphoneCallStats linphoneCallStats) {
-        Log.e(TAG, "callStatsUpdated");
+        PtLog.e("callStatsUpdated = " + linphoneCall.getState().toString());
     }
 
     @Override
     public void newSubscriptionRequest(LinphoneCore linphoneCore, LinphoneFriend linphoneFriend, String s) {
-        Log.e(TAG, "newSubscriptionRequest");
+        PtLog.e("newSubscriptionRequest");
     }
 
     @Override
     public void notifyPresenceReceived(LinphoneCore linphoneCore, LinphoneFriend linphoneFriend) {
-        Log.e(TAG, "notifyPresenceReceived");
+        PtLog.e("notifyPresenceReceived");
     }
 
     @Override
     public void textReceived(LinphoneCore linphoneCore, LinphoneChatRoom linphoneChatRoom, LinphoneAddress linphoneAddress, String s) {
-        Log.e(TAG, "textReceived");
+        PtLog.e("textReceived");
     }
 
     @Override
     public void dtmfReceived(LinphoneCore linphoneCore, LinphoneCall linphoneCall, int i) {
-        Log.e(TAG, "dtmfReceived");
+        PtLog.e("dtmfReceived");
     }
 
     @Override
     public void notifyReceived(LinphoneCore linphoneCore, LinphoneCall linphoneCall, LinphoneAddress linphoneAddress, byte[] bytes) {
-        Log.e(TAG, "notifyReceived");
+        PtLog.e("notifyReceived");
     }
 
     @Override
     public void transferState(LinphoneCore linphoneCore, LinphoneCall linphoneCall, LinphoneCall.State state) {
-        Log.e(TAG, "transferState");
+        PtLog.e("transferState");
     }
 
     @Override
     public void infoReceived(LinphoneCore linphoneCore, LinphoneCall linphoneCall, LinphoneInfoMessage linphoneInfoMessage) {
-        Log.e(TAG, "infoReceived");
+        PtLog.e("infoReceived");
     }
 
     @Override
     public void subscriptionStateChanged(LinphoneCore linphoneCore, LinphoneEvent linphoneEvent, SubscriptionState subscriptionState) {
-        Log.e(TAG, "subscriptionStateChanged");
+        PtLog.e("subscriptionStateChanged");
     }
 
     @Override
     public void publishStateChanged(LinphoneCore linphoneCore, LinphoneEvent linphoneEvent, PublishState publishState) {
-        Log.e(TAG, "publishStateChanged");
+        PtLog.e("publishStateChanged");
     }
 
     @Override
     public void show(LinphoneCore linphoneCore) {
-        Log.e(TAG, "show");
+        PtLog.e("show");
     }
 
     @Override
     public void displayStatus(LinphoneCore linphoneCore, String s) {
-        Log.e(TAG, "displayStatus");
+        PtLog.e("displayStatus = " + s);
     }
 
     @Override
     public void displayMessage(LinphoneCore linphoneCore, String s) {
-        Log.e(TAG, "displayMessage");
+        PtLog.e("displayMessage");
     }
 
     @Override
     public void displayWarning(LinphoneCore linphoneCore, String s) {
-        Log.e(TAG, "displayWarning");
+        PtLog.e("displayWarning");
     }
 
     @Override
     public void fileTransferProgressIndication(LinphoneCore linphoneCore, LinphoneChatMessage linphoneChatMessage, LinphoneContent linphoneContent, int i) {
-        Log.e(TAG, "fileTransferProgressIndication");
+        PtLog.e("fileTransferProgressIndication");
     }
 
     @Override
     public void fileTransferRecv(LinphoneCore linphoneCore, LinphoneChatMessage linphoneChatMessage, LinphoneContent linphoneContent, byte[] bytes, int i) {
-        Log.e(TAG, "fileTransferRecv");
+        PtLog.e("fileTransferRecv");
     }
 
     @Override
     public int fileTransferSend(LinphoneCore linphoneCore, LinphoneChatMessage linphoneChatMessage, LinphoneContent linphoneContent, ByteBuffer byteBuffer, int i) {
-        Log.e(TAG, "fileTransferSend");
+        PtLog.e("fileTransferSend");
         return 0;
     }
 
     @Override
     public void callEncryptionChanged(LinphoneCore linphoneCore, LinphoneCall linphoneCall, boolean b, String s) {
-        Log.e(TAG, "callEncryptionChanged");
+        PtLog.e("callEncryptionChanged");
     }
 
-    @Override
-    public void callState(LinphoneCore linphoneCore, LinphoneCall linphoneCall, LinphoneCall.State state, String s) {
-        Log.e(TAG, "callState");
-    }
+
 
     @Override
     public void isComposingReceived(LinphoneCore linphoneCore, LinphoneChatRoom linphoneChatRoom) {
-        Log.e(TAG, "isComposingReceived");
+        PtLog.e("isComposingReceived");
     }
 
     @Override
     public void globalState(LinphoneCore linphoneCore, LinphoneCore.GlobalState globalState, String s) {
-        Log.e(TAG, "globalState");
+        PtLog.e("globalState = " + globalState.toString() + ", " + s);
     }
 
     @Override
     public void uploadProgressIndication(LinphoneCore linphoneCore, int i, int i1) {
-        Log.e(TAG, "uploadProgressIndication");
+        PtLog.e("uploadProgressIndication");
     }
 
     @Override
     public void uploadStateChanged(LinphoneCore linphoneCore, LinphoneCore.LogCollectionUploadState logCollectionUploadState, String s) {
-        Log.e(TAG, "uploadStateChanged");
+        PtLog.e("uploadStateChanged");
     }
 
     @Override
     public void messageReceived(LinphoneCore linphoneCore, LinphoneChatRoom linphoneChatRoom, LinphoneChatMessage linphoneChatMessage) {
-        Log.e(TAG, "messageReceived");
+        PtLog.e("messageReceived");
     }
 
     @Override
     public void notifyReceived(LinphoneCore linphoneCore, LinphoneEvent linphoneEvent, String s, LinphoneContent linphoneContent) {
-        Log.e(TAG, "notifyReceived");
-    }
-
-    @Override
-    public void registrationState(LinphoneCore linphoneCore, LinphoneProxyConfig linphoneProxyConfig, LinphoneCore.RegistrationState registrationState, String s) {
-        Log.e(TAG, "registrationState");
+        PtLog.e("notifyReceived");
     }
 
     @Override
     public void configuringStatus(LinphoneCore linphoneCore, LinphoneCore.RemoteProvisioningState remoteProvisioningState, String s) {
-        Log.e(TAG, "configuringStatus");
+        PtLog.e("configuringStatus");
+    }
+
+    @Override
+    public void registrationState(LinphoneCore linphoneCore, LinphoneProxyConfig linphoneProxyConfig, LinphoneCore.RegistrationState registrationState, String s) {
+        mLinphoneListener.onRegState(registrationState, s);
+    }
+
+    @Override
+    public void callState(LinphoneCore linphoneCore, LinphoneCall linphoneCall, LinphoneCall.State state, String s) {
+        mLinphoneListener.onCallState(linphoneCall, state, s);
     }
 }
