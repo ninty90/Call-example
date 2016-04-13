@@ -39,7 +39,7 @@ import tw.com.chainsea.call.R;
  * LinphoneManager
  * Created by 90Chris on 2015/7/1.
  */
-public class LinphoneManager implements LinphoneCoreListener.LinphoneListener {
+public class LinphoneManager implements LinphoneCoreListener {
 
     private static LinphoneManager instance;
     private LinphoneCore mLc;
@@ -267,11 +267,6 @@ public class LinphoneManager implements LinphoneCoreListener.LinphoneListener {
     }
 
     @Override
-    public void textReceived(LinphoneCore linphoneCore, LinphoneChatRoom linphoneChatRoom, LinphoneAddress linphoneAddress, String s) {
-        PtLog.e("textReceived");
-    }
-
-    @Override
     public void dtmfReceived(LinphoneCore linphoneCore, LinphoneCall linphoneCall, int i) {
         PtLog.e("dtmfReceived");
     }
@@ -347,6 +342,11 @@ public class LinphoneManager implements LinphoneCoreListener.LinphoneListener {
     @Override
     public void isComposingReceived(LinphoneCore linphoneCore, LinphoneChatRoom linphoneChatRoom) {
         PtLog.e("isComposingReceived");
+    }
+
+    @Override
+    public void ecCalibrationStatus(LinphoneCore linphoneCore, LinphoneCore.EcCalibratorStatus ecCalibratorStatus, int i, Object o) {
+        PtLog.e("ecCalibrationStatus = " + ecCalibratorStatus.toString());
     }
 
     @Override

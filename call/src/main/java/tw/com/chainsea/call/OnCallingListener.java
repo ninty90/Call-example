@@ -6,5 +6,4 @@ package tw.com.chainsea.call;
  */
 public interface OnCallingListener {
     void onCallEnd();
-    void onRegistrationFailed();
 }

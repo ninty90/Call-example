@@ -45,6 +45,7 @@ public class CallingFragment extends Fragment implements OnLinphoneListener, Vie
     OnCallingListener mListener = null;
     TextView tvTimer = null;
     TextView tvTitle = null;
+    CallState mState = CallState.CALLING;
 
     private final static String USER_ID = "user_id";
     private final static String PWD = "pwd";
@@ -129,7 +130,7 @@ public class CallingFragment extends Fragment implements OnLinphoneListener, Vie
             setCallingTo(getArguments().getString(AGENT_ID),  getArguments().getString(HOST));
         } else if ( registrationState == LinphoneCore.RegistrationState.RegistrationFailed ) {
             PtLog.e("register failed");
-            if ( mListener != null ) mListener.onRegistrationFailed();
+            if ( mListener != null ) mListener.onCallEnd();
         }
     }
 
@@ -165,6 +166,7 @@ public class CallingFragment extends Fragment implements OnLinphoneListener, Vie
 
         if ( state == LinphoneCall.State.Connected ) {
             startCallingTimer();
+            mState = CallState.CONNECTED;
         }
 
     }
@@ -227,7 +229,11 @@ public class CallingFragment extends Fragment implements OnLinphoneListener, Vie
         } else if ( id == R.id.calling_speaker ) {
             toggleSpeaker();
         } else if ( id == R.id.calling_hang_up ) {
-            hangUp();
+            if ( mState == CallState.CONNECTED ) {
+                hangUp();
+            } else if ( mListener != null ){
+                mListener.onCallEnd();
+            }
         }
     }
 
@@ -293,16 +299,21 @@ public class CallingFragment extends Fragment implements OnLinphoneListener, Vie
         }
     }
 
-    Timer callingTimer;
+    Timer callingTimer = new Timer();
     int minutes = 0;
     int seconds = 0;
     public void startCallingTimer() {
-        callingTimer = new Timer();
         callingTimer.scheduleAtFixedRate(new CallingTimer(), 1000, 1000);
     }
 
     private void stopCallingTimer() {
         callingTimer.cancel();
         callingTimer.purge();
+    }
+
+    public enum CallState {
+        CALLING,
+        CONNECTED,
+        END
     }
 }
