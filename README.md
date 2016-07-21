@@ -8,7 +8,6 @@
 
 二，把`chainsea_call_sdk_1.0.0.aar`放入到app的libs目錄下，并在`build.gradle`添加依賴
 ```
-
 repositories{
 	//添加libs目錄為依賴來源之一
     flatDir{
@@ -33,6 +32,7 @@ SipCallManager(Context context, String userId, String pw)
 ```
 
 **userId** : 為用戶ID
+
 **pw** : 用戶密碼
 
 例如：
@@ -53,6 +53,7 @@ public interface Listener {
 ```
 
 **to** : 需要撥打的電話號碼
+
 **listener** : 通話回調接口
 
 例如：
@@ -65,6 +66,9 @@ callManager.startCall("95555", this);
 ###其他功能
 
 `void hangup()` 掛斷處理
+
 `void sendDtmf(char c)` 發送dtmf
+
 `void setSpeaker(boolean isSpeakerEnabled)` 是否開啟外放，傳入true為開啟，false為關閉
+
 `void setMute(boolean isMicMuted)`   是否禁言，true為禁言，false為不禁言
