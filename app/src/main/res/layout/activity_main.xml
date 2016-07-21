@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:name="tw.com.chainsea.call.CallingFragment" >
-    <FrameLayout
-        android:id="@+id/fragment"
+    android:orientation="vertical"
+    android:gravity="center"
+    tools:context="tw.com.chainsea.call_example.MainActivity">
+
+    <EditText
+        android:id="@+id/call_to"
+        android:inputType="phone"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
-</RelativeLayout>
+        android:layout_height="wrap_content" />
+    <Button
+        android:id="@+id/call_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="拨打"/>
+</LinearLayout>

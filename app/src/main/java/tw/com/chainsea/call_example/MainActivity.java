@@ -1,31 +1,39 @@
 package tw.com.chainsea.call_example;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 
-import me.pengtao.ptlog.*;
-import tw.com.chainsea.call.CallingFragment;
+import cn.hadcn.davinci.log.LogLevel;
+import cn.hadcn.davinci.log.VinciLog;
+import tw.com.chainsea.call_example.base.Constant;
 
 public class MainActivity extends AppCompatActivity {
-    private final static String mUserId = "0000028000019001";
-    private final static String mUserPwd = "00000000";
-    private final static String mHost = "111.204.26.22:5030";
-    private final static String mAgentId = "000002800001TC20160428180653030036";
-    private final static String mAgentName = "加龙";
-    /*private final static String mUserId = "0000021231239001";
-    private final static String mUserPwd = "00000000";
-    private final static String mHost = "211.150.71.180:5066";
-    private final static String mAgentId = "12345678";*/
+    private Button btnCall;
+    private EditText etCallNumber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        VinciLog.init(LogLevel.DEBUG, "CallExample", this);
 
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment,
-                        CallingFragment.newInstance(mUserId, mUserPwd, mAgentId, mHost, mAgentName))
-                .commit();
-        PtLog.init(BuildConfig.DEBUG, "Call-example", this);
+        setContentView(R.layout.activity_main);
+        btnCall = (Button)findViewById(R.id.call_button);
+        etCallNumber = (EditText)findViewById(R.id.call_to);
+
+        btnCall.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, CallActivity.class);
+                intent.putExtra(Constant.INTENT_ID, "1100017");
+                intent.putExtra(Constant.INTENT_PASSWORD, "1234");
+                intent.putExtra(Constant.INTENT_CALL_TO, etCallNumber.getText().toString());
+                intent.putExtra(Constant.INTENT_CALL_NAME, etCallNumber.getText().toString());
+                startActivity(intent);
+            }
+        });
     }
 }
