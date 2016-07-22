@@ -4,7 +4,7 @@
 
 ###準備
 
-一，下載[chainsea_call_sdk_1.0.0.aar](https://raw.githubusercontent.com/ninty90/Call-example/master/chainsea_call_sdk_1.0.0.sdk)
+一，下載[chainsea_call_sdk_1.0.0.aar](https://raw.githubusercontent.com/ninty90/Call-example/master/app/libs/chainsea_call_sdk_1.0.0.aar)
 
 二，把`chainsea_call_sdk_1.0.0.aar`放入到app的libs目錄下，并在`build.gradle`添加依賴
 ```
