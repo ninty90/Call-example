@@ -4,7 +4,7 @@
 
 ###準備
 
-一，下載[chainsea_call_sdk_1.0.0.aar](https://raw.githubusercontent.com/ninty90/Call-example/master/app/libs/chainsea_call_sdk_1.0.1.aar)
+一，下載[chainsea_call_sdk_1.0.1.aar](https://raw.githubusercontent.com/ninty90/Call-example/master/app/libs/chainsea_call_sdk_1.0.1.aar)
 
 二，把`chainsea_call_sdk_1.0.0.aar`放入到app的libs目錄下，并在`build.gradle`添加依賴
 ```
@@ -28,19 +28,31 @@ compile 'com.github.CPPAlien:VinciLog:2.0.1'
 
 功能總入口`SipCallManager`，首先需要初始化
 ```
-SipCallManager(Context context, String userId, String pw)
+SipCallManager(Context context, String ip, int port)
 ```
 
-**userId** : 為用戶ID
+**ip** : ip地址
 
-**pw** : 用戶密碼
+**port** : 端口號
 
 例如：
 ```
-SipCallManager callManager = new SipCallManager(getContext(), "1100017", "1234");
+SipCallManager callManager = new SipCallManager(getContext(), "111.204.26.22", 5035);
 ```
 
-初始化成功后，進行call動作
+初始化成功后，設置用戶信息
+
+```
+setUserInfo(String userId, String pw)
+```
+
+例如：
+
+```
+callManager.setUserInfo("1100017", "1234");
+```
+
+然後進行call動作
 
 ```
 startCall(String to, Listener listener)
@@ -51,6 +63,7 @@ public interface Listener {
     void onCalling(); //通話成功
 }
 ```
+
 
 **to** : 需要撥打的電話號碼
 
