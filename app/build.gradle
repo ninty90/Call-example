@@ -27,9 +27,9 @@ repositories{
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
-    compile(name:'chainsea_call_sdk_1.0.0', ext:'aar')
+    compile(name: 'chainsea_call_sdk_1.0.1', ext: 'aar')
     compile 'com.android.support:appcompat-v7:23.3.0'
     compile 'com.github.CPPAlien:VinciLog:2.0.1'
 }

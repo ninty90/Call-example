@@ -53,11 +53,11 @@ public class CallingFragment extends Fragment implements View.OnClickListener, S
         mView = inflater.inflate(R.layout.fragment_calling_two, container, false);
         mView.findViewById(R.id.calling_hang_up).setOnClickListener(this);
 
-        tvTitle = (TextView)mView.findViewById(R.id.calling_title);
+        tvTitle = (TextView) mView.findViewById(R.id.calling_title);
         tvTitle.setText(getArguments().getString(AGENT_NAME));
-        speakerImage = (SquareImage)mView.findViewById(R.id.calling_speaker);
+        speakerImage = (SquareImage) mView.findViewById(R.id.calling_speaker);
         speakerImage.setOnClickListener(this);
-        muteImage = (SquareImage)mView.findViewById(R.id.calling_mute);
+        muteImage = (SquareImage) mView.findViewById(R.id.calling_mute);
         muteImage.setOnClickListener(this);
         tvTimer = (TextView) mView.findViewById(R.id.calling_time);
         displayDialer();
@@ -66,12 +66,20 @@ public class CallingFragment extends Fragment implements View.OnClickListener, S
 
     public void displayDialer() {
         final List<DigitModel> digitList = new ArrayList<>();
-        digitList.add(new DigitModel("1", null));digitList.add(new DigitModel("2", "ABC"));digitList.add(new DigitModel("3", "DEF"));
-        digitList.add(new DigitModel("4", "GHI"));digitList.add(new DigitModel("5", "JKL"));digitList.add(new DigitModel("6", "MNO"));
-        digitList.add(new DigitModel("7", "PQRS"));digitList.add(new DigitModel("8", "TUV"));digitList.add(new DigitModel("9", "WXYZ"));
-        digitList.add(new DigitModel("*", null));digitList.add(new DigitModel("0", "+"));digitList.add(new DigitModel("#", null));
+        digitList.add(new DigitModel("1", null));
+        digitList.add(new DigitModel("2", "ABC"));
+        digitList.add(new DigitModel("3", "DEF"));
+        digitList.add(new DigitModel("4", "GHI"));
+        digitList.add(new DigitModel("5", "JKL"));
+        digitList.add(new DigitModel("6", "MNO"));
+        digitList.add(new DigitModel("7", "PQRS"));
+        digitList.add(new DigitModel("8", "TUV"));
+        digitList.add(new DigitModel("9", "WXYZ"));
+        digitList.add(new DigitModel("*", null));
+        digitList.add(new DigitModel("0", "+"));
+        digitList.add(new DigitModel("#", null));
         DialerGridAdapter dialerGridAdapter = new DialerGridAdapter(getActivity(), digitList);
-        GridView dialerGrid = (GridView)mView.findViewById(R.id.calling_dialer);
+        GridView dialerGrid = (GridView) mView.findViewById(R.id.calling_dialer);
         dialerGrid.setAdapter(dialerGridAdapter);
         dialerGrid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -91,18 +99,19 @@ public class CallingFragment extends Fragment implements View.OnClickListener, S
         String callTo = getArguments().getString(AGENT_ID);
 
         VinciLog.e("id = " + id + ", pw = " + pw + ", callTo = " + callTo);
-        callManager = new SipCallManager(getContext(), id, pw);
+        callManager = new SipCallManager(getContext(), "111.204.26.22", 5035);
+        callManager.setUserInfo(id, pw);
         callManager.startCall(callTo, this);
     }
 
     @Override
     public void onClick(View v) {
         int id = v.getId();
-        if ( id == R.id.calling_mute ) {
-            callManager.setMute(true);
-        } else if ( id == R.id.calling_speaker ) {
-            callManager.setSpeaker(true);
-        } else if ( id == R.id.calling_hang_up ) {
+        if (id == R.id.calling_mute) {
+            callManager.enableMute(true);
+        } else if (id == R.id.calling_speaker) {
+            callManager.enableSpeaker(true);
+        } else if (id == R.id.calling_hang_up) {
             callManager.hangup();
         }
     }
