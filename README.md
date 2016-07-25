@@ -6,7 +6,7 @@
 
 一，下載[chainsea_call_sdk_1.0.1.aar](https://raw.githubusercontent.com/ninty90/Call-example/master/app/libs/chainsea_call_sdk_1.0.1.aar)
 
-二，把`chainsea_call_sdk_1.0.0.aar`放入到app的libs目錄下，并在`build.gradle`添加依賴
+二，把`chainsea_call_sdk_1.0.1.aar`放入到app的libs目錄下，并在`build.gradle`添加依賴
 ```
 repositories{
 	//添加libs目錄為依賴來源之一
@@ -18,7 +18,7 @@ repositories{
 }
 
 //在dependencies下添加依賴
-compile(name:'chainsea_call_sdk_1.0.0', ext:'aar')
+compile(name:'chainsea_call_sdk_1.0.1', ext:'aar')
 compile 'com.github.CPPAlien:VinciLog:2.0.1'
 ```
 
