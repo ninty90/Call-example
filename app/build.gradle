@@ -2,12 +2,12 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "22.0.1"
+    buildToolsVersion "23.0.3"
 
     defaultConfig {
         applicationId "tw.com.chainsea.call_example"
         minSdkVersion 10
-        targetSdkVersion 22
+        targetSdkVersion 23
         versionCode 1
         versionName "1.0"
     }
@@ -29,7 +29,8 @@ repositories{
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
-    compile(name: 'chainsea_call_sdk_1.0.1', ext: 'aar')
+    compile(name: 'chainsea_call_sdk_1.0.2', ext: 'aar')
     compile 'com.android.support:appcompat-v7:23.3.0'
     compile 'com.github.CPPAlien:VinciLog:2.0.1'
+    //compile project(':call')
 }

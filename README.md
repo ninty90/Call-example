@@ -4,9 +4,9 @@
 
 ###準備
 
-一，下載[chainsea_call_sdk_1.0.1.aar](https://raw.githubusercontent.com/ninty90/Call-example/master/app/libs/chainsea_call_sdk_1.0.1.aar)
+一，下載[chainsea_call_sdk_1.0.2.aar](https://raw.githubusercontent.com/ninty90/Call-example/master/app/libs/chainsea_call_sdk_1.0.2.aar)
 
-二，把`chainsea_call_sdk_1.0.1.aar`放入到app的libs目錄下，并在`build.gradle`添加依賴
+二，把`chainsea_call_sdk_1.0.2.aar`放入到app的libs目錄下，并在`build.gradle`添加依賴
 ```
 repositories{
 	//添加libs目錄為依賴來源之一
@@ -18,11 +18,9 @@ repositories{
 }
 
 //在dependencies下添加依賴
-compile(name:'chainsea_call_sdk_1.0.1', ext:'aar')
+compile(name:'chainsea_call_sdk_1.0.2', ext:'aar')
 compile 'com.github.CPPAlien:VinciLog:2.0.1'
 ```
-
-三，設置`targetSdkVersion`為`22`，目前版本必須設置為22或更小
 
 ###使用說明
 
@@ -37,7 +35,7 @@ SipCallManager(Context context, String ip, int port)
 
 例如：
 ```
-SipCallManager callManager = new SipCallManager(getContext(), "111.204.26.22", 5035);
+SipCallManager callManager = new SipCallManager(getContext(), "127.0.0.1", 5035);
 ```
 
 初始化成功后，設置用戶信息
