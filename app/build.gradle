@@ -10,6 +10,9 @@ android {
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
+        ndk {
+            abiFilters "armeabi", "armeabi-v7a", "x86"
+        }
     }
     buildTypes {
         release {
@@ -19,8 +22,8 @@ android {
     }
 }
 
-repositories{
-    flatDir{
+repositories {
+    flatDir {
         dirs 'libs'
     }
     maven { url "https://jitpack.io" }
@@ -29,8 +32,8 @@ repositories{
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
-    compile(name: 'chainsea_call_sdk_1.0.2', ext: 'aar')
+    compile(name: 'chainsea_call_sdk_1.0.3', ext: 'aar')
     compile 'com.android.support:appcompat-v7:23.3.0'
     compile 'com.github.CPPAlien:VinciLog:2.0.1'
-    //compile project(':call')
+//    compile project(':call')
 }

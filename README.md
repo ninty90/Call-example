@@ -4,10 +4,16 @@
 
 ###準備
 
-一，下載[chainsea_call_sdk_1.0.2.aar](https://raw.githubusercontent.com/ninty90/Call-example/master/app/libs/chainsea_call_sdk_1.0.2.aar)
+一，下載[chainsea_call_sdk_1.0.3.aar](https://raw.githubusercontent.com/ninty90/Call-example/master/app/libs/chainsea_call_sdk_1.0.3.aar)
 
-二，把`chainsea_call_sdk_1.0.2.aar`放入到app的libs目錄下，并在`build.gradle`添加依賴
+二，把`chainsea_call_sdk_1.0.3.aar`放入到app的libs目錄下，并在`build.gradle`添加abiFilters和依賴
 ```
+defaultConfig {
+        ...
+        ndk {
+            abiFilters "armeabi", "armeabi-v7a", "x86"
+        }
+    }
 repositories{
 	//添加libs目錄為依賴來源之一
     flatDir{
@@ -18,7 +24,7 @@ repositories{
 }
 
 //在dependencies下添加依賴
-compile(name:'chainsea_call_sdk_1.0.2', ext:'aar')
+compile(name:'chainsea_call_sdk_1.0.3', ext:'aar')
 compile 'com.github.CPPAlien:VinciLog:2.0.1'
 ```
 
